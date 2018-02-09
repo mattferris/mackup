@@ -1,0 +1,5 @@
+#!/bin/sh
+#
+# gzip archiver for macklog, see macklog(8)
+#
+exec gzip --best --stdout

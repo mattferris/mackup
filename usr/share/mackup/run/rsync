@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# rsync backup script for mackup, see mackup(8)
+#
+exec 2>&1
+
+source="$(dirname $1)/$(basename $1)"
+opts="-av"
+
+if [ ! -z "$REMOTE_HOST" ]; then
+    source="$REMOTE_HOST:$source"
+fi
+
+if [ ! -z "$RSYNC_OPTS" ]; then
+    opts="$RSYNC_OPTS"
+fi
+
+if [ ! -z "$RSYNC_DELETE" ]; then
+    opts="$opts --delete"
+fi
+
+if [ ! -z "$RSYNC_EXCLUDE_FROM" ]; then
+    opts="$opts --exclude-from=\"$RSYNC_EXCLUDE_FROM\""
+fi
+
+exec rsync $opts $source ./data/

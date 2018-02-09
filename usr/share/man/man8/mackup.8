@@ -1,0 +1,73 @@
+.TH mackup 8 "Feb 2018" mackup "User Guide"
+.SH NAME
+mackup \- a utility for performing arbitrary backup processes in a standard manner
+.SH SYNOPSIS
+.B mackup
+.I dir
+.SH DESCRIPTION
+.BR mackup (8)
+allows an administrator to backups parts of a system (or systems) in a standard manner using multiple secondary utilities (such as
+.BR tar (1)
+or
+.BR rsync (1)) 
+simply by managing plaintext files. Modifying the contents of these files adjusts the behavior of the backup, reducing redundancy in scripting the backups by hand while allowing other programs to easily edit and maintain the contents of the files. Abrastracting the schedule of the backups from the backup utilties themselves also allows the adminstrator to change the backup utility, and automatically have the same backup schedule continue.
+.P
+If the current day is Monday, and the 
+.IR dir /tagets/mon
+directory exists, then all the sources listed in 
+.IR dir /targets/mon/control/sources
+will be backed up individually into 
+.IR dir /targets/mon/data.
+If
+For example, if 
+.IR dir /targets/mon/control/sources
+contained /etc, then on Monday the /etc folder would be tar'd and stored in 
+.IR dir /targets/mon/data/etc.tar.
+.IR dir /targets/mon/data
+is created automatically if it doesn't exist.
+.P
+Similarily, if it's the 3rd of the month, and
+.IR dir /targets/3
+exists, then all sources listed in
+.IR dir /targets/3
+will be tar'd. If both
+.IR dir /targets/mon
+and
+.IR dir /targets/3
+exist, both directories will be processed.
+.P
+Lastly, if the directory 
+.IR dir /targets/daily
+exists, it will be processed every day.
+.P
+While 
+.I sources
+file lists the locations that need to be backed up, the
+.I run
+file specifies the command that actually performs the backup. This file is actually a script that is called by mackup and is passed the following arguments:
+.IR source " " target " " .
+.I source 
+is the directory to backup,
+.I target
+is the location to backup \fIsource\fR to. 
+.P
+.B mackup
+will produce output during it's run. The contents of this output is a mix of notice and error messages as well as the current file path being backed up. This output can be capture and sent to a log file with either the included logging utility
+.BR macklog (8)
+or with a third-party utility such as
+.BR multilog (8)
+by Dan Bernstein.
+.SH OPTIONS
+.IP dir
+The directory that
+.B mackup
+should look in for configuration data.
+.SH FILES
+.IP sources
+The list of locations to backup.
+.IP run
+The script that is executed to process the backup.
+.SH AUTHOR
+Matt Ferris <matt@bueller.ca>
+.SH SEE ALSO
+.BR macklog (8)

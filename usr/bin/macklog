@@ -1,0 +1,124 @@
+#!/usr/bin/perl
+use File::Copy;
+
+# logging utility used with mackup
+
+my $logdir;
+my $msize = 1000000;
+my $fcount = 10;
+
+if ($ARGV[0] ne "")
+{
+    if (-d $ARGV[0])
+    {    
+        $logdir = $ARGV[0];
+    }
+    else
+    {
+        print "error: directory doesn't exist\n";
+        exit;
+    }
+    if ($ARGV[1] ne "")
+    {
+        $msize = $ARGV[1];
+        if ($ARGV[2])
+        {
+            $fcount = $ARGV[2];
+        }
+    }
+}
+
+my $fsize = 0;
+if (-f "$logdir/current")
+{
+    $fsize = -s "$logdir/current";
+}
+
+open (CUR, ">>$logdir/current") or die("$!\n");
+while (<STDIN>)
+{
+    my ($sec, $min, $hr, $mday, $mon, $year) = localtime();
+
+    $year += 1900;
+    $mon += 1;
+
+    my $date = sprintf("%d%02d%02d%02d%02d%02d", 
+        $year, $mon, $mday, $hr, $min, $sec);
+
+    # Add the size of the line + 15 bytes for the date
+    # and 1 byte for \n (bash doesn't count newlines)
+    $fsize += length()+16;
+
+    if ($fsize <= $msize)
+    {
+        print CUR "$date $_"; 
+    }
+    else
+    {
+        if (! -x $ENV{'MACKLOG_ARCHIVER'}) {
+            print STDERR "error: can't exec archiver $ENV{'MACKLOG_ARCHIVER'}\n";
+        }
+        elsif ($ENV{'MACKLOG_ARCHIVER'} ne "")
+        {
+            close(CUR);
+            move("$logdir/current", "$logdir/tmp");
+
+            my $pid = fork();
+            if (!defined $pid)
+            {
+                die("$!\n");
+            }
+            if ($pid == 0)
+            {
+                my $ext = '';
+                if ($ENV{'MACKLOG_ARCHIVER_EXT'} ne "") {
+                    $ext = ".$ENV{'MACKLOG_ARCHIVER_EXT'}";
+                }
+
+                open(STDIN, "$logdir/tmp") or die("$!\n");
+                open(STDOUT, ">$logdir/$date$ext") or die("$!\n");
+                exec($ENV{'MACKLOG_ARCHIVER'}) or die("$!\n");
+                exit(0);
+            }
+            else
+            {
+                waitpid($pid, 0);
+                if (-f "$logdir/tmp") {
+                    unlink("$logdir/tmp");
+                }
+            }
+
+        }
+        else
+        {
+            close(CUR);
+            move("$logdir/current", "$logdir/$date");
+        }
+
+        open(CUR, ">>$logdir/current") or die("$!\n");
+        $fsize = length()+15;
+        print CUR "$date $_";
+
+        my @files;
+        opendir(DIR, "$logdir") or die ("$!\n");
+        while (my $file = readdir(DIR))
+        {
+            next if /^\./;
+            next if /^current$/;
+            next if /^tmp$/;
+            push(@files, $file);
+        }
+        closedir(DIR);
+
+        @files = sort { $b cmp $a } @files;
+        for (my $j=0; $j<$#files-1; $j++)
+        {
+            if ($j >= $fcount)
+            {
+                unlink("$logdir/".@files[$j]) or
+                    die("$!\n");
+            }
+        }
+    }
+}
+close(CUR);

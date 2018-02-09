@@ -1,0 +1,5 @@
+#!/bin/sh
+#
+# bzip2 archiver for macklog, see macklog(8)
+#
+exec bzip2 --best --stdout

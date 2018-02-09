@@ -1,0 +1,11 @@
+#!/usr/bin/perl
+
+$months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+		'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+while (<STDIN>)
+{
+	/^([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})/;
+	$datetime = "$1/".$months->[$2]."/$3-$4:$5:$6";
+	s/^([0-9]{14})/$datetime/;
+	print;
+}

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+host=$1
+action=$(basename $0 | awk -F- '{print $1}')
+service=$(basename $0 | awk -F- '{print $2}')
+
+if [ -z "$host" ]; then
+    host="localhost"
+fi
+
+if [ -z "$action" -o -z "$service" ]; then
+    echo "unabled to parse action and/or service from script name" 2>&1
+    exit 1
+fi
+
+exec /usr/share/mackup/util/servicectl $host $service $action

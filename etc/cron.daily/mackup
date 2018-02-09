@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# Cron script for mackup, see mackup(8)
+#
+
+if [ ! -d "/etc/mackup.d" ]; then
+    exit
+fi
+
+#
+# complete backups for defined sets
+#
+for set in $(ls -1 /etc/mackup.d); do
+    setdir=$(readlink "/etc/mackup.d/$set")
+    if [ ! -d "$setdir/targets" ]; then
+        echo "directory doesn't exist: $setdir/targets" 1>&2
+        exit 1
+    fi
+
+    # are we logging?
+    logdir="$setdir/log"
+    if [ -d "$logdir" ]; then
+        /usr/bin/mackup "$setdir/targets" | /usr/bin/macklog "$logdir" 
+    else
+        /usr/bin/mackup "$setdir/targets" 
+    fi
+done

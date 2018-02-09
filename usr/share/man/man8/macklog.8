@@ -1,0 +1,46 @@
+.TH macklog 8 "Feb 2018" macklog "User Guide"
+.SH NAME
+macklog \- a utility for recording each line of output from 
+.BR mackup (8)
+to a log file with a timestamp
+.SH SYNOPSIS
+.B macklog
+.I dir
+.B [
+.I size
+.B [
+.I count
+.B ]
+.B ]
+.SH DESCRIPTION
+.BR macklog (8)
+reads input on stdin and writes it to the file
+.IR dir /current.
+Each line is prepended with a timestamp using the
+.BR date (1)
+format %Y%m%d%H%M%S (or [year][month][day][hour][minute][second]).
+.B macklog
+will also perform log rotation if supplied with the
+.I size
+parameter. Once 
+.IR dir /current
+equals or exceeds
+.IR size,
+it is renamed to the timestamp of the last line written to it. If
+.I count
+is specified, then only
+.I count
+number of the latest ratated log files will be kept. Anything older will be deleted.
+.SH OPTIONS
+.IP dir
+The directory that
+.B macklog
+should look log to.
+.IP size
+The size the current file should reach before rotating it. If not specified, no rotation will occur.
+.IP count
+The number of log files to keep after rotation. Older log files will be deleted first.
+.SH AUTHOR
+Matt Ferris <matt@bueller.ca>
+.SH SEE ALSO
+.BR mackup (8)

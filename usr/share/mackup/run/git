@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# git backup script for mackup, see mackup(8) 
+#
+exec 2>&1
+
+source="$(dirname $1)/$(basename $1)"
+target=$(basename $1)
+
+cpcmd="cp"
+
+if [ ! -z "$REMOTE_HOST" ]; then
+    cpcmd="scp"
+    source="$REMOTE_HOST:$source"
+fi
+
+if [ ! -d "./data/"$target".git" ]; then
+    $cpcmd -rp "$source" ./data/"$target".git
+    (
+        cd ./data/"$target".git \
+        && git init
+    )
+else
+    $cpcmd -rp "$source"/* ./data/"$target".git
+fi
+
+(
+    cd ./data/"$target".git
+    if [ ! -z "$(git status -s)" ]; then
+        git add .
+        git commit -m "backing up $source"
+    else
+        git status
+    fi
+)

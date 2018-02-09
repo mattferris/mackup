@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# tar backup script for mackup, see mackup(8) 
+#
+exec 2>&1
+
+source="$(dirname $1)/$(basename $1)"
+target=$(basename $1)
+opts="-v"
+ext="tar"
+
+if [ ! -z "$TAR_OPTS" ]; then
+    opts=$TAR_OPTS
+fi
+
+if [ ! -z "$TAR_BZIP2" ]; then
+    opts="$opts -j"
+    ext="$ext.bz2"
+elif [ ! -z "$TAR_GZIP" ]; then
+    opts="$opts -z"
+    ext="$ext.gz"
+fi
+
+if [ ! -z "$REMOTE_HOST" ]; then
+    exec ssh $REMOTE_HOST tar $opts -c $source > ./data/$target.$ext
+else
+    exec tar $opts -cf ./data/$target.$ext $source
+fi
