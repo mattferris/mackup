@@ -5,6 +5,7 @@
 exec 2>&1
 
 source="$(dirname $1)/$(basename $1)"
+target="./"
 opts="-av"
 
 if [ ! -z "$REMOTE_HOST" ]; then
@@ -20,7 +21,47 @@ if [ ! -z "$RSYNC_DELETE" ]; then
 fi
 
 if [ ! -z "$RSYNC_EXCLUDE_FROM" ]; then
-    opts="$opts --exclude-from=\"$RSYNC_EXCLUDE_FROM\""
+    opts="$opts --exclude-from=$RSYNC_EXCLUDE_FROM"
 fi
 
-exec rsync $opts $source ./
+if [ ! -z "$INCREMENTAL_MONTHLY" ]; then
+    curmonth=$(date +'%b' | awk '{print tolower($1)}')
+    lastmonth=$(date -d '1 month ago' +'%b' | awk '{print tolower($1)}')
+    echo "attempting monthly incremental backup: last=$lastmonth cur=$curmonth"
+    lasttarget="$(realpath $target)/$lastmonth/$(basename $source)"
+    newtarget="$target/$curmonth/$(basename $source)"
+    if [ -d "$lasttarget" ]; then
+        echo "found last month's backup: $lasttarget"
+        opts="$opts --link-dest=$(dirname $lasttarget)/"
+    else
+        echo "backup $lasttarget doesn't exist, starting fresh"
+    fi
+
+    if [ ! -z "$RSYNC_INCREMENTAL_NUM" ]; then
+        delmonth=$(date -d "$RSYNC_INCREMENTAL_NUM" +'%b' | awk '{print tolower($1)}')
+        if [ -d "$target/$delmonth" ]; then
+            echo "deleting old monthly backup $target/$delmonth"
+            rm -r "$target/$delmonth"
+        fi
+    fi
+elif [ ! -z "$INCREMENTAL_DAILY" ]; then
+    curday=$(date +'%a' | awk '{print tolower($1)}')
+    lastday=$(date -d 'yesterday' +'%a' | awk '{print tolower($1)}')
+    echo "attempting daily incremental backup: last=$lastday cur=$curday"
+    lasttarget="$(realpath $target)/$lastday/$(basename $source)"
+    newtarget="$target/$curday"
+    if [ -d "$lasttarget" ]; then
+        echo "found yesterday's backup: $lasttarget"
+        opts="$opts --link-dest=$(dirname $lasttarget)/"
+    else
+        echo "backup $lasttarget doesn't exist, starting fresh"
+    fi
+fi
+
+if [ ! -d "$newtarget" ]; then
+    mkdir -p "$newtarget"
+fi
+
+echo "rsync $opts $source $newtarget"
+
+exec rsync $opts $source $newtarget
