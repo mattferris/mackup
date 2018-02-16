@@ -1,6 +1,10 @@
 #!/bin/sh
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
+if [ ! -z "$MACKUP_ENVPATH" ]; then
+    MACKUP_ENVPATH="./control/env"
+fi
+
 # See mackup(8) for more information
 
 if [ -z "$1" ]; then
@@ -51,6 +55,22 @@ doalert() {
 }
 
 #
+# process env dir
+#
+doenv() {
+    envlist=""
+    for envdir in $MACKUP_ENVPATH; do
+        if [ -d "$envdir" ]; then
+            for var in $(ls -1 "$envdir"); do
+                val=$(head -n1 "$envdir/$var")
+                envlist="$envlist $var=$(head -n1 "$envdir/$var")"
+            done
+        fi
+    done
+    echo $envlist
+}
+
+#
 # process a target
 #
 dodir() {
@@ -85,14 +105,7 @@ dodir() {
     skiptarget=0
 
     # prepare environment variables for pre/run/post scripts
-    runenv=""
-    envdir="./control/env"
-    if [ -d "$envdir" ]; then
-        for var in $(ls -1 "$envdir"); do
-            val=$(head -n1 "$envdir/$var")
-            runenv="$runenv $var=$(head -n1 "$envdir/$var")"
-        done
-    fi
+    runenv=$(doenv)
 
     echo "target $tname: using environment in ./control/env ($runenv )"
 

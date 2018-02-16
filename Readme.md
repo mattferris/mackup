@@ -1,7 +1,7 @@
 mackup
 ======
 
-mackup is an easily configurable backup scheduler.
+mackup is a flexible backup scheduler.
 
 Usage
 -----
@@ -32,21 +32,18 @@ First, setup the sources file.
 
     # echo /etc > mon/control/sources
 
-Next we need to create the `run` file. mackup passes 2 arguments to the run
-script. In order, these arguments are the *source path* and *target path*.
-The *source path* is the path defined in the `sources` file, while the
-*target path* is the path to the *target*'s `data` directory.
+Next we need to create the `run` file. mackup passes the backup *source path* as
+an argument to the run script.  The *source path* is the path defined in the
+`sources` file. mackup will change directory to the targets `data/` directory
+before executing the run script.
 
     # cat <<EOF > mon/control/run
     #!/bin/sh
 
     # source directory
-    source="$(dirname $source)/$(basename $source)"
+    source="$(dirname $1)/$(basename $1)"
 
-    # target directory
-    target="$(dirname $target)/$(basename $target)"
-
-    tar cf "$source.tar" "$target"
+    tar cf "$source.tar" "$(basename $source)".tar
     EOF
 
 Make sure to make the `run` script executable.
@@ -150,6 +147,8 @@ some of their behaviour (set via `control/env/` for each target).
 
 Backup sources using `rsync`. Symlink into `control/run` to use.
 
+- `$INCREMENTAL_DAILY` - if exists, link the current day to the previous day using `--link-dest`
+- `$INCREMENTAL_MONTHLY` - if exists, link the current month to the previous month using `--list-dest`
 - `$REMOTE_HOST` - address or hostname where sources reside
 - `$RSYNC_OPTS` - custom list of options (overrides default of `-av`
 - `$RSYNC_DELETE` - if exists, use the `--delete` option
