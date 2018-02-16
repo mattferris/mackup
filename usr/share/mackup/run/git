@@ -14,18 +14,18 @@ if [ ! -z "$REMOTE_HOST" ]; then
     source="$REMOTE_HOST:$source"
 fi
 
-if [ ! -d "./data/"$target".git" ]; then
-    $cpcmd -rp "$source" ./data/"$target".git
+if [ ! -d "$target.git" ]; then
+    $cpcmd -rp "$source" "$target.git"
     (
-        cd ./data/"$target".git \
+        cd "$target.git" \
         && git init
     )
 else
-    $cpcmd -rp "$source"/* ./data/"$target".git
+    $cpcmd -rp "$source"/* "$target.git"
 fi
 
 (
-    cd ./data/"$target".git
+    cd "$target.git"
     if [ ! -z "$(git status -s)" ]; then
         git add .
         git commit -m "backing up $source"

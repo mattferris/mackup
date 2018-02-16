@@ -23,4 +23,4 @@ if [ ! -z "$RSYNC_EXCLUDE_FROM" ]; then
     opts="$opts --exclude-from=\"$RSYNC_EXCLUDE_FROM\""
 fi
 
-exec rsync $opts $source ./data/
+exec rsync $opts $source ./
