@@ -144,7 +144,7 @@ dodir() {
             continue
         fi
 
-        echo "target $tname: source $source: running $runpath $source $tpath/data"
+        echo "target $tname: source $source: running $runpath $source"
 
         # run the backup command
         (
