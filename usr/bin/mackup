@@ -152,7 +152,7 @@ dodir() {
             env $runenv "../$runpath" "$source"
             retcode=$?
             if [ ! $retcode = 0 ]; then
-                echo "target $tname: source $source: run: error: script failed, returned with code $retcode"
+                echo "error: script failed, returned with code $retcode"
                 doalert $(printf '%s\n\n%s\n%s\n%s\n\n%s\n\n%s' \
                     "Run script failed, returned with code $retcode" \
                     "Host:   $(hostname -f)" \
