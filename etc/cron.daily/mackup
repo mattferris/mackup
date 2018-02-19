@@ -2,8 +2,9 @@
 #
 # Cron script for mackup, see mackup(8)
 #
+set -a
 
-MACKUP_SETDIR="/etc/mackup.d"
+MACKUP_SETDIR="/etc/mackup/sets.d"
 MACKLOG_SIZE="100000000"
 MACKLOG_COUNT="10"
 
@@ -11,7 +12,7 @@ if [ -f "/etc/default/mackup" ]; then
     . /etc/default/mackup
 fi
 
-if [ ! -d "/etc/mackup.d" ]; then
+if [ ! -d "$MACKUP_SETDIR" ]; then
     exit
 fi
 
