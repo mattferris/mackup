@@ -1,7 +1,7 @@
 #!/bin/sh
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
-if [ ! -z "$MACKUP_ENVPATH" ]; then
+if [ -z "$MACKUP_ENVPATH" ]; then
     MACKUP_ENVPATH="./control/env"
 fi
 
@@ -95,19 +95,13 @@ dodir() {
         exit 1
     fi
 
-    # does target/data exist?
-    if [ ! -d "./data" ]; then
-        mkdir "./data"
-    fi
-
     echo "target $tname: using sources in $srcpath"
 
     skiptarget=0
 
     # prepare environment variables for pre/run/post scripts
     runenv=$(doenv)
-
-    echo "target $tname: using environment in ./control/env ($runenv )"
+    echo "target $tname: compiling environment from envpath ($MACKUP_ENVPATH) producing ($runenv )"
 
     # process each listed source
     for source in $(cat $srcpath | grep -v ^#); do
