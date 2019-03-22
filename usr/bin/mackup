@@ -156,7 +156,7 @@ dodir() {
         # run the backup command
         (
             cd ./data
-            env $runenv "../$runpath" "$source"
+            env $runenv "../$runpath" "$source" 2>&1
             retcode=$?
             if [ ! $retcode = 0 ]; then
                 echo "error: script failed, returned with code $retcode"
