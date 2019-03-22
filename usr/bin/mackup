@@ -28,11 +28,11 @@ echo "working directory is $PWD"
 # %b abbreviated month name (Jan, Feb, ...)
 # %d day of month
 #
-targets=$( echo daily $(date +'%a %b %d' | awk '{print tolower($0)}') )
+targets=$( echo daily $(date +'%a %d' | awk '{print tolower($0)}') )
 
-# inject 'monthly' target if first day of the month
+# inject 'monthly' and month name targets if first day of the month
 if [ $(date +'%d') = "01" ]; then
-    targets="$targets monthly"
+    targets="$targets monthly $(date +'%b' | awk '{print tolower($0)}')"
 fi
 
 # inject 'annually' target if first day of the year
