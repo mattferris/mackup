@@ -1,0 +1,15 @@
+#
+# Default options for macklog
+#
+
+# list of environment directory paths, later directories have precedence over earlier ones
+MACKUP_ENVPATH="/etc/mackup/control/env ~/.mackup/control/env ../../control/env ./control/env"
+
+# directory to look for backup sets
+MACKUP_SETDIR="/etc/mackup/sets.d"
+
+# the max log file size
+MACKLOG_SIZE="100000000"
+
+# the max number of files to keep for rotation
+MACKLOG_COUNT="10"

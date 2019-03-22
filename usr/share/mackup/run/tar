@@ -22,7 +22,7 @@ elif [ ! -z "$TAR_GZIP" ]; then
 fi
 
 if [ ! -z "$REMOTE_HOST" ]; then
-    exec ssh $REMOTE_HOST tar $opts -c $source > ./data/$target.$ext
+    exec ssh $REMOTE_HOST tar $opts -c "$source" > "$target.$ext"
 else
-    exec tar $opts -cf ./data/$target.$ext $source
+    exec tar $opts -cf "$target.$ext" "$source"
 fi

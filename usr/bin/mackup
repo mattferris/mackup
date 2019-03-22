@@ -1,6 +1,10 @@
 #!/bin/sh
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
+if [ -z "$MACKUP_ENVPATH" ]; then
+    MACKUP_ENVPATH="./control/env"
+fi
+
 # See mackup(8) for more information
 
 if [ -z "$1" ]; then
@@ -51,6 +55,22 @@ doalert() {
 }
 
 #
+# process env dir
+#
+doenv() {
+    envlist=""
+    for envdir in $MACKUP_ENVPATH; do
+        if [ -d "$envdir" ]; then
+            for var in $(ls -1 "$envdir"); do
+                val=$(head -n1 "$envdir/$var")
+                envlist="$envlist $var=$(head -n1 "$envdir/$var")"
+            done
+        fi
+    done
+    echo $envlist
+}
+
+#
 # process a target
 #
 dodir() {
@@ -75,26 +95,13 @@ dodir() {
         exit 1
     fi
 
-    # does target/data exist?
-    if [ ! -d "./data" ]; then
-        mkdir "./data"
-    fi
-
     echo "target $tname: using sources in $srcpath"
 
     skiptarget=0
 
     # prepare environment variables for pre/run/post scripts
-    runenv=""
-    envdir="./control/env"
-    if [ -d "$envdir" ]; then
-        for var in $(ls -1 "$envdir"); do
-            val=$(head -n1 "$envdir/$var")
-            runenv="$runenv $var=$(head -n1 "$envdir/$var")"
-        done
-    fi
-
-    echo "target $tname: using environment in ./control/env ($runenv )"
+    runenv=$(doenv)
+    echo "target $tname: compiling environment from envpath ($MACKUP_ENVPATH) producing ($runenv )"
 
     # process each listed source
     for source in $(cat $srcpath | grep -v ^#); do
@@ -144,14 +151,15 @@ dodir() {
             continue
         fi
 
-        echo "target $tname: source $source: running $runpath $source $tpath/data"
+        echo "target $tname: source $source: running $runpath $source"
 
         # run the backup command
         (
-            env $runenv "$runpath" "$source"
+            cd ./data
+            env $runenv "../$runpath" "$source"
             retcode=$?
             if [ ! $retcode = 0 ]; then
-                echo "target $tname: source $source: run: error: script failed, returned with code $retcode"
+                echo "error: script failed, returned with code $retcode"
                 doalert $(printf '%s\n\n%s\n%s\n%s\n\n%s\n\n%s' \
                     "Run script failed, returned with code $retcode" \
                     "Host:   $(hostname -f)" \

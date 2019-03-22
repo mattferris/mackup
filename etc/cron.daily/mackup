@@ -2,16 +2,25 @@
 #
 # Cron script for mackup, see mackup(8)
 #
+set -a
 
-if [ ! -d "/etc/mackup.d" ]; then
+MACKUP_SETDIR="/etc/mackup/sets.d"
+MACKLOG_SIZE="100000000"
+MACKLOG_COUNT="10"
+
+if [ -f "/etc/default/mackup" ]; then
+    . /etc/default/mackup
+fi
+
+if [ ! -d "$MACKUP_SETDIR" ]; then
     exit
 fi
 
 #
 # complete backups for defined sets
 #
-for set in $(ls -1 /etc/mackup.d); do
-    setdir=$(readlink "/etc/mackup.d/$set")
+for set in $(ls -1 $MACKUP_SETDIR); do
+    setdir=$(readlink "$MACKUP_SETDIR/$set")
     if [ ! -d "$setdir/targets" ]; then
         echo "directory doesn't exist: $setdir/targets" 1>&2
         exit 1
@@ -20,7 +29,7 @@ for set in $(ls -1 /etc/mackup.d); do
     # are we logging?
     logdir="$setdir/log"
     if [ -d "$logdir" ]; then
-        /usr/bin/mackup "$setdir/targets" | /usr/bin/macklog "$logdir" 
+        /usr/bin/mackup "$setdir/targets" | /usr/bin/macklog "$logdir" $MACKLOG_SIZE $MACKLOG_COUNT
     else
         /usr/bin/mackup "$setdir/targets" 
     fi

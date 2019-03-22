@@ -7,6 +7,13 @@ my $logdir;
 my $msize = 1000000;
 my $fcount = 10;
 
+if (defined($ENV{'MACKLOG_SIZE'})) {
+    $mszie = $ENV{'MACKLOG_SIZE'};
+}
+if (defined($ENV{'MACKLOG_COUNT'})) {
+    $fcount = $ENV{'MACKLOG_COUNT'};
+}
+
 if ($ARGV[0] ne "")
 {
     if (-d $ARGV[0])
@@ -55,11 +62,12 @@ while (<STDIN>)
     }
     else
     {
-        if (! -x $ENV{'MACKLOG_ARCHIVER'}) {
-            print STDERR "error: can't exec archiver $ENV{'MACKLOG_ARCHIVER'}\n";
-        }
-        elsif ($ENV{'MACKLOG_ARCHIVER'} ne "")
+        if ($ENV{'MACKLOG_ARCHIVER'} ne "")
         {
+            if (! -x $ENV{'MACKLOG_ARCHIVER'}) {
+                print STDERR "error: can't exec archiver $ENV{'MACKLOG_ARCHIVER'}\n";
+            }
+
             close(CUR);
             move("$logdir/current", "$logdir/tmp");
 
