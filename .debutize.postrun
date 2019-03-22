@@ -1,0 +1,5 @@
+#!/bin/sh
+
+if [ -f "./var/log/mackup/local/.gitkeep" ]; then
+    rm ./var/log/mackup/local/.gitkeep
+fi
