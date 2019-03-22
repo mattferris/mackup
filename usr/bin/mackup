@@ -31,7 +31,7 @@ echo "working directory is $PWD"
 targets=$( echo daily $(date +'%a %b %d' | awk '{print tolower($0)}') )
 
 # inject 'monthly' target if first day of the month
-if [ $(date +'%d') = "1" ]; then
+if [ $(date +'%d') = "01" ]; then
     targets="$targets monthly"
 fi
 
