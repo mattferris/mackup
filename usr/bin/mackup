@@ -155,8 +155,14 @@ dodir() {
 
         # run the backup command
         (
+            if [ ! -d /data ]; then
+                mkdir ./data
+            fi
+
             cd ./data
+
             env $runenv "../$runpath" "$source" 2>&1
+
             retcode=$?
             if [ ! $retcode = 0 ]; then
                 echo "error: script failed, returned with code $retcode"
