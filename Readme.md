@@ -131,11 +131,14 @@ are laid out in a way that reflects this suggestion, assuming a Debian file
 system standard).
 
 Sets are stored in `/var/lib/mackup`, with logging stored in `/var/log/mackup`.
-Sets are enabled by linking them in `/etc/mackup.d`. The cron script in
-`/etc/cron.daily/mackup` scans `/etc/mackup.d` for enabled sets. If a set
+Sets are enabled by linking them in `/etc/mackup/sets.d`. The cron script in
+`/etc/cron.daily/mackup` scans `/etc/mackup/sets.d` for enabled sets. If a set
 contains a `log` subdirectoy (preferably a symlink to `/var/log/mackup/<set>`,
 then output produced during the backup will be logged to a file, otherwise it
 is captured by cron and emailed to the user (in most cases).
+
+Helper scripts
+--------------
 
 A number of helper scripts are included in `/usr/share/mackup`. This includes
 flexible run scripts for `rsync`, `tar`, and `git` backups, as well as some
@@ -149,6 +152,7 @@ Backup sources using `rsync`. Symlink into `control/run` to use.
 
 - `$INCREMENTAL_DAILY` - if exists, link the current day to the previous day using `--link-dest`
 - `$INCREMENTAL_MONTHLY` - if exists, link the current month to the previous month using `--list-dest`
+- '$INCREMENTAL_NUM' - the number of previous monthly backups to keep
 - `$REMOTE_HOST` - address or hostname where sources reside
 - `$RSYNC_OPTS` - custom list of options (overrides default of `-av`
 - `$RSYNC_DELETE` - if exists, use the `--delete` option
