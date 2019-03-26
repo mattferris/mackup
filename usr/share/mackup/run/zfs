@@ -49,7 +49,7 @@ if zfs get -H -o value type "$snapname" >/dev/null 2>&1; then
     echo "error: encountered name collision, aborting: $snapname"
 fi
 
-if ! (zfs snap "$ZFS_OPTS" "$snapname"); then
+if ! (zfs snap $ZFS_OPTS "$snapname"); then
     echo "error: failed to create snapshot" >&2
     exit 3
 fi
