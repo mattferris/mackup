@@ -20,7 +20,13 @@ snaplimit=-1
 snapdate=$(date +'%Y%m%d')
 snaphash=$(dd if=/dev/urandom count=1 bs=512 2>/dev/null | md5sum | cut -d\  -f1)
 
-snapname="${source}@mackup-${snapdate}-${snaphash}"
+snapprfx="mackup"
+
+if [ ! -z "$ZFS_SNAP_PREFIX" ]; then
+    snapprfx="mackup-${ZFS_SNAP_PREFIX}"
+fi
+
+snapname="${source}@${snapprfx}-${snapdate}-${snaphash}"
 
 if ! snapcount=$(zfs get -H -o value snapshot_count $source 2>&1); then
     echo "error: failed to get snapshot_count, possible non-existent dataset or volume: $source" >&2
@@ -59,7 +65,7 @@ echo "created snapshot $snapname"
 if [ $ROTATE -gt 0 ]; then
     echo "cleaning up old snapshots; only keeping the last $ROTATE"
     i=0
-    for snap in $(zfs list -H -t snap -o name -s name | grep "^$source@mackup-" | sort -r); do
+    for snap in $(zfs list -H -t snap -o name -s name | grep "^${source}@${snapprfx}-" | sort -r); do
         if [ $i -ge $ROTATE ]; then
             if ! (zfs destroy -d "$snap"); then
                 echo "error: unable to destroy snapshot, aborting cleanup" >&2
