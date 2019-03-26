@@ -174,6 +174,14 @@ as git will consider them to be submodules. Symlink into `control/run` to use.
 
 - `$REMOTE_HOST` - address or hostname where sources reside
 
+### run/zfs
+
+Backup sources using ZFS snapshots (only available for ZFS datasets and volumes).
+Symlink into `control/run` to use. 
+
+- `$ROTATE` - the number of previous snapshots to keep
+- `$ZFS_OPTS` - custom list of options
+
 ### util/remotecmd
 
 Execute a command via SSH on a remote host.
