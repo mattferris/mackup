@@ -4,6 +4,28 @@
 #
 exec 2>&1
 
+if [ -z "$1" ]; then
+    cat <<EOF
+
+This script is part of mackup, a backup suite.
+
+Backup sources using ZFS snapshots.
+
+Environment variables:
+
+    ROTATE
+        The number of previous snapshots to keep
+
+    ZFS_OPTS
+        Custom list of options (passed to -o)
+
+    ZFS_SNAP_PREFIX
+        A prefix to apply to snapshot names
+
+EOF
+    exit 1
+fi
+
 source=$1
 
 if [ -z "$ROTATE" ]; then

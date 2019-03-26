@@ -4,6 +4,22 @@
 #
 exec 2>&1
 
+if [ -z "$1" ]; then
+    cat <<EOF
+
+This script is part of mackup, a backup suite.
+
+Backup a source using git.
+
+Environment variables:
+
+    REMOTE_HOST
+        Address or hostname where sources reside
+
+EOF
+    exit 1
+fi
+
 source="$(dirname $1)/$(basename $1)"
 target=$(basename $1)
 
