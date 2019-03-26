@@ -152,9 +152,10 @@ Backup sources using `rsync`. Symlink into `control/run` to use.
 
 - `$INCREMENTAL_DAILY` - if exists, link the current day to the previous day using `--link-dest`
 - `$INCREMENTAL_MONTHLY` - if exists, link the current month to the previous month using `--list-dest`
-- '$INCREMENTAL_NUM' - the number of previous monthly backups to keep
+- '$INCREMENTAL_NUM' - the number of previous monthly backups to keep (deprecated)
 - `$REMOTE_HOST` - address or hostname where sources reside
-- `$RSYNC_OPTS` - custom list of options (overrides default of `-av`
+- '$ROTATE' - the number of previous monthly backups to keep
+- `$RSYNC_OPTS` - custom list of options (overrides default of `-av`)
 - `$RSYNC_DELETE` - if exists, use the `--delete` option
 - `$RSYNC_EXCLUDE_FROM` - specifies a path to use with `--exclude-from`
 

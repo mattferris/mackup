@@ -13,6 +13,11 @@ if [ ! -z "$REMOTE_HOST" ]; then
     source="$REMOTE_HOST:$source"
 fi
 
+if [ ! -z "$INCREMENTAL_NUM" -a -z "$ROTATE" ]; then
+    echo "notice: use of INCREMENTAL_NUM is deprecated, use ROTATE instead" >&2
+    ROTATE=$INCREMENTAL_NUM
+fi
+
 if [ ! -z "$RSYNC_OPTS" ]; then
     opts="$RSYNC_OPTS"
 fi
@@ -38,8 +43,8 @@ if [ ! -z "$INCREMENTAL_MONTHLY" ]; then
         echo "backup $lasttarget doesn't exist, starting fresh"
     fi
 
-    if [ ! -z "$INCREMENTAL_NUM" ]; then
-        delmonth=$(date -d "$INCREMENTAL_NUM months ago" +'%b' | awk '{print tolower($1)}')
+    if [ ! -z "$ROTATE" ]; then
+        delmonth=$(date -d "$ROTATE months ago" +'%b' | awk '{print tolower($1)}')
         if [ -d "$target/$delmonth" ]; then
             echo "deleting old monthly backup $target/$delmonth"
             rm -r "$target/$delmonth"
