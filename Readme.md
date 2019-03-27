@@ -3,6 +3,12 @@ mackup
 
 mackup is a flexible backup scheduler.
 
+Requirements
+------------
+
+- Perl
+- YAML::Tiny (`apt-get install libyaml-tiny-perl` on Debian)
+
 Usage
 -----
 
