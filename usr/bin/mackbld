@@ -1,12 +1,10 @@
 #!/usr/bin/perl
-#
-# mackbld /etc/mackup/sets.d/set.yml /etc/mackup/global.yml
-#
 
 use File::Path qw(remove_tree);
 use YAML::Tiny;
 
 my $cfg = { 'global' => {}, 'sets' => {} };
+
 
 #
 # load config from files
@@ -30,6 +28,10 @@ for (my $i=@ARGV-1; $i>=0; $i--) {
         $cfg->{'global'} = $tmpcfg->{'global'};
     }
 
+    #
+    # iterate of sets, performing sanity checks
+    #
+
     if ($tmpcfg->{'sets'}) {
         foreach my $s (keys(%{$tmpcfg->{'sets'}})) {
 
@@ -46,7 +48,7 @@ for (my $i=@ARGV-1; $i>=0; $i--) {
             }
 
             #
-            # check all targets in set have a run command and sources
+            # check all targets in set define 'run' and 'sources'
             #
 
             my $hasrun = 0;
@@ -74,8 +76,9 @@ for (my $i=@ARGV-1; $i>=0; $i--) {
 
 }
 
+
 #
-# check for required options
+# check for required global options
 #
 
 foreach my $key (@{['cachedir', 'datadir', 'logdir', 'libdir']}) {
@@ -88,6 +91,7 @@ foreach my $key (@{['cachedir', 'datadir', 'logdir', 'libdir']}) {
     }
 }
 
+
 #
 # build the sets
 #
@@ -96,8 +100,12 @@ foreach my $set (keys(%{$cfg->{'sets'}})) {
     buildset($set, $cfg->{'sets'}->{$set});
 }
 
+
 #
-# error sub
+# void error(int $code, str $msg)
+#
+# $code The error code
+# $msg The error message
 #
 sub error {
     my $code = shift;
@@ -106,16 +114,23 @@ sub error {
     exit $code;
 }
 
+
 #
-# info sub
+# void info(str $msg)
+#
+# $msg The info message
 #
 sub info {
     my $msg = shift;
     print STDERR "info: $msg\n";
 }
 
+
 #
-# buildset sub
+# void buildset(str $name, hashref $set)
+#
+# $name The name of the set
+# $set The hashref containing the set configuration
 #
 sub buildset {
     local $name = shift;
@@ -136,15 +151,17 @@ sub buildset {
         }
     }
 
-    # build fresh cache
+    # make fresh cache directory
     info("$name: creating config cache");
     mkdir($cachedir) || error(3, "$name: failed to create config cache $cachedir");
 
+    # make data directory if it doesn't exist
     if (! -d $datadir) {
         info("$name: creating data directory");
         mkdir($datadir) || error(3, "$name: failed to create data directory $datadir");
     }
 
+    # make log directory if it doesn't exist
     if (! -d $logdir) {
         info("$name: creating log directory");
         mkdir($logdir) || error(3, "$name: failed to create log directory $logdir");
@@ -157,14 +174,17 @@ sub buildset {
 
         my $tgtcfg = $set->{'targets'}->{$t};
 
+        # import 'run' from set if not defined for target
         if (!$tgtcfg->{'run'}) {
             $tgtcfg->{'run'} = $set->{'run'};
         }
 
+        # import 'sources' from set if not defined for target
         if (!$tgtcfg->{'sources'}) {
             $tgtcfg->{'sources'} = $set->{'sources'};
         }
 
+        # import options from set where not defined by target
         if ($set->{'options'}) {
             $tgtcfg->{'options'} = {} if !$tgtcfg->{'options'};
             foreach my $opt (keys(%{$set->{'options'}})) {
@@ -176,18 +196,23 @@ sub buildset {
 
         buildtarget($tgtdir, $tgtcfg);
 
+        # make target data directory and link to control directory
         my $tdatadir = "$datadir/$t";
         if (! -d $tdatadir) {
             mkdir($tdatadir) || error(3, "$name: failed to create target data directory $tdatadir");
-            symlink($tgtdir, "$tdatadir/control") || error(3, "$name: failed to link config in target data directory contr -> $tgtdir");
+            symlink($tgtdir, "$tdatadir/control") || error(3, "$name: failed to link config in target data directory control -> $tgtdir");
         }
     }
 
     info("successfully built set $name");
 }
 
+
 #
-# buildcfg
+# void buildtarget(str $path, hashref $tcfg)
+#
+# $path The path to build the target in
+# $tcfg The hashref containing the target configuration
 #
 sub buildtarget {
     local $path = shift;
@@ -218,3 +243,4 @@ sub buildtarget {
         }
     }
 }
+
