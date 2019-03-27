@@ -200,7 +200,12 @@ sub buildset {
     # build targets
     foreach my $t (keys(%{$set->{'targets'}})) {
         # only process the target if it is enabled
-        next if !asbool($set->{'targets'}->{$t}->{'enabled'});
+        if (!asbool($set->{'targets'}->{$t}->{'enabled'})) {
+            info("$name: skipping target $t, not enabled");
+            next;
+        }
+
+        info("$name: preparing target $t");
 
         my $tgtdir = "$cachedir/$t";
         mkdir($tgtdir) || error(3, "$name: failed to create target directory $tgtdir");
