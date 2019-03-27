@@ -163,7 +163,7 @@ sets:
         #
         # Enable the target.
         #
-        enable: true
+        enabled: true
 
         #
         # Optionally override the default run command for the set.
