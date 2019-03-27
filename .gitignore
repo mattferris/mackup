@@ -1,5 +1,3 @@
 TODO
 work/
 *.deb
-var/lib/mackup/cache
-var/lib/mackup/sets
