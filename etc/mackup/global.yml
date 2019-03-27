@@ -1,0 +1,6 @@
+global:
+
+  cachedir: /var/lib/mackup/cache
+  datadir: /var/lib/mackup/sets
+  logdir: /var/log/mackup
+  libdir: /usr/share/mackup

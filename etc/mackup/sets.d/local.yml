@@ -1,0 +1,11 @@
+sets:
+
+  local:
+    run: tar
+    sources:
+      - /etc
+      - /home
+      - /root
+    targets:
+      daily:
+        enable: true
