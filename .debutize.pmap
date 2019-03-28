@@ -1,0 +1,11 @@
+0755:root:root:etc:R
+0644:root:root:etc/default/mackup
+0644:root:root:etc/mackup/mackup.yml
+0644:root:root:etc/mackup/conf.d/local.yml
+0755:root:root:usr:R
+0644:root:root:usr/share/mackup/Readme.md
+0644:root:root:usr/share/man/man8/macklog.8
+0644:root:root:usr/share/man/man8/mackup.8
+0755:root:root:var:R
+0750:root:root:var/lib/mackup:R
+0750:root:root:var/log/mackup:R
