@@ -1,0 +1,314 @@
+#!/usr/bin/perl
+#
+# Error codes:
+# 
+#   1 - Setup and argument processing errors
+#   2 - Config validation errors
+#   3 - System errors
+#
+
+use File::Path qw(make_path remove_tree);
+use YAML::Tiny;
+
+my $cfg = { 'global' => {}, 'sets' => {} };
+
+
+#
+# load config from files
+#
+
+for (my $i=@ARGV-1; $i>=0; $i--) {
+
+    my $file = $ARGV[$i];
+
+    unless (-f $file) {
+        error(1, "file doesn't exist: $file");
+    }
+
+    info("reading file $file");
+
+    my $yaml = YAML::Tiny->read($file);
+    my $tmpcfg = $yaml->[0];
+
+    if ($tmpcfg->{'global'}) {
+        info("$file: found global configuration");
+        $cfg->{'global'} = $tmpcfg->{'global'};
+    }
+
+    #
+    # iterate of sets, performing sanity checks
+    #
+
+    if ($tmpcfg->{'sets'}) {
+        foreach my $s (keys(%{$tmpcfg->{'sets'}})) {
+
+            info("$file: found set $s");
+
+            if ($cfg->{'sets'}->{$s}) {
+                error(2, "set already exists for $s");
+            }
+
+            my $tmpset = $tmpcfg->{'sets'}->{$s};
+
+            if (!$tmpset->{'targets'}) {
+                error(2, "no targets defined for $s");
+            }
+
+            #
+            # check all targets in set define 'run' and 'sources'
+            #
+
+            my $hasrun = 0;
+            my $hassrc = 0;
+
+            $hasrun = 1 if $tmpset->{'run'};
+            $hassrc = 1 if $tmpset->{'sources'} && @{$tmpset->{'sources'}};
+
+            foreach my $t (keys(%{$tmpset->{'targets'}})) {
+                my $tmptgt = $tmpset->{'targets'}->{$t};
+
+                unless ($hasrun || $tmptgt->{'run'}) {
+                    error(2, "no run command defined for target $t in set $s");
+                }
+
+                unless ($hassrc || ($tmptgt->{'sources'} && @{$tmptgt->{'sources'}})) {
+                    error(2, "no sources defined for target $t in set $s");
+                }
+            }
+
+            $cfg->{'sets'}->{$s} = $tmpcfg->{'sets'}->{$s};
+
+        }
+    }
+
+}
+
+
+#
+# check for required global options
+#
+
+foreach my $key (@{['cachedir', 'datadir', 'etcdir', 'logdir', 'libdir']}) {
+    if (!$cfg->{'global'}->{$key} || $cfg->{'global'}->{$key} eq '') {
+        error(2, "global option $key is undefined");
+    }
+
+    if (! -d $cfg->{'global'}->{$key}) {
+        error(2, "$key path ".$cfg->{'global'}->{$key}." doesn't exist");
+    }
+}
+
+
+#
+# build the sets
+#
+
+foreach my $set (keys(%{$cfg->{'sets'}})) {
+    buildset($set, $cfg->{'sets'}->{$set});
+}
+
+
+#
+# void error(int $code, str $msg)
+#
+# $code The error code
+# $msg The error message
+#
+sub error {
+    my $code = shift;
+    my $msg = shift;
+    print STDERR "error: $msg\n";
+    exit $code;
+}
+
+
+#
+# void info(str $msg)
+#
+# $msg The info message
+#
+sub info {
+    my $msg = shift;
+    print STDERR "info: $msg\n";
+}
+
+
+#
+# void buildset(str $name, hashref $set)
+#
+# $name The name of the set
+# $set The hashref containing the set configuration
+#
+sub buildset {
+    local $name = shift;
+    local $set = shift;
+
+    info("proceeding to build set $name");
+
+    local $cachedir = $cfg->{'global'}->{'cachedir'} .'/'. $name;
+    local $datadir = $cfg->{'global'}->{'datadir'} .'/'. $name;
+    local $logdir = $cfg->{'global'}->{'logdir'} .'/'. $name;
+    local $etcdir = $cfg->{'global'}->{'etcdir'};
+
+    # wipe cache if it exists
+    if (-d $cachedir) {
+        info("$name: wiping existing config cache");
+        remove_tree($cachedir, { error => \my $err });
+        if (@$err) {
+            error(3, "$name: failed to wipe config cache");
+        }
+    }
+
+    # make fresh cache directory
+    info("$name: creating config cache");
+    mkdir($cachedir) || error(3, "$name: failed to create config cache $cachedir");
+
+    # make data directory if it doesn't exist
+    if (! -d $datadir) {
+        info("$name: creating data directory");
+        make_path("$datadir/targets", { error => \my $err});
+        if (@$err) {
+            error(3, "$name: failed to create data directory $datadir/targets");
+        }
+    }
+
+    # prepare logging, if enabled
+    if (asbool($set->{'logging'})) {
+
+        # make log directory if it doesn't exist
+        if (! -d $logdir) {
+            info("$name: creating log directory");
+            mkdir($logdir) || error(3, "$name: failed to create log directory $logdir");
+        }
+
+        # symlink log directory into set
+        if (-l "$datadir/log") {
+            unlink("$datadir/log") || error(3, "$name: failed to remove symlink $datadir/log");
+        } elsif (-e "$datadir/log") {
+            if (-d "$datadir/log") {
+                info("$name: found existing log directory, archiving as $datadir/oldlog");
+            } else {
+                info("$name: found $datadir/log but is an invalid file type, archiving as $datadir/oldlog");
+            }
+            rename("$datadir/log", "$datadir/oldlog") || error(3, "$name: failed to rename $datadir/log to $datadir/oldlog");
+        }
+
+        symlink($logdir, "$datadir/log") || error(3, "$name: failed to create symlink $datadir/log -> $logdir");
+
+    }
+
+    # build targets
+    foreach my $t (keys(%{$set->{'targets'}})) {
+        # only process the target if it is enabled
+        if (!asbool($set->{'targets'}->{$t}->{'enabled'})) {
+            info("$name: skipping target $t, not enabled");
+            next;
+        }
+
+        info("$name: preparing target $t");
+
+        my $tgtdir = "$cachedir/$t";
+        mkdir($tgtdir) || error(3, "$name: failed to create target directory $tgtdir");
+
+        my $tgtcfg = $set->{'targets'}->{$t};
+
+        # import 'run' from set if not defined for target
+        if (!$tgtcfg->{'run'}) {
+            $tgtcfg->{'run'} = $set->{'run'};
+        }
+
+        # import 'sources' from set if not defined for target
+        if (!$tgtcfg->{'sources'}) {
+            $tgtcfg->{'sources'} = $set->{'sources'};
+        }
+
+        # import options from set where not defined by target
+        if ($set->{'options'}) {
+            $tgtcfg->{'options'} = {} if !$tgtcfg->{'options'};
+            foreach my $opt (keys(%{$set->{'options'}})) {
+                if (!$tgtcfg->{'options'}->{$o}) {
+                    $tgtcfg->{'options'}->{$opt} = $set->{'options'}->{$o};
+                }
+            }
+        }
+
+        buildtarget($tgtdir, $tgtcfg);
+
+        # make target data directory and link to control directory
+        my $tdatadir = "$datadir/targets/$t";
+        if (! -d $tdatadir) {
+            mkdir($tdatadir) || error(3, "$name: failed to create target data directory $tdatadir");
+            symlink($tgtdir, "$tdatadir/control") || error(3, "$name: failed to link config in target data directory control -> $tgtdir");
+        }
+    }
+
+    # removing existing symlink in etc/mackup/sets.d
+    if (-l "$etcdir/sets.d/$name") {
+        unlink("$etcdir/sets.d/$name") || error(3, "$name: failed to remove symlink $etcdir/sets.d/$name");
+    } elsif (-e "$etcdir/sets.d/$name") {
+        error(3, "$name: refusing to remove $etcdir/sets.d/$name as it is not a symlink");
+    }
+
+    # make set active, if enabled
+    if (asbool($set->{'enabled'})) {
+        info("$name: set is enabled, so making it active");
+        symlink($datadir, "$etcdir/sets.d/$name") || error(3, "$name: failed to create symlink $etcdir/sets.d/$name -> $datadir");
+    } else {
+        info("$name: set is not enabled, so not making it active");
+    }
+
+    info("successfully built set $name");
+}
+
+
+#
+# void buildtarget(str $path, hashref $tcfg)
+#
+# $path The path to build the target in
+# $tcfg The hashref containing the target configuration
+#
+sub buildtarget {
+    local $path = shift;
+    local $tcfg = shift;
+
+    if ($tcfg->{'run'}) {
+        local $run = $tcfg->{'run'};
+        if ($run !~ /^\//) {
+            $run = $cfg->{'global'}->{'libdir'}.'/run/'.$run;
+        }
+        symlink($run, "$path/run") || error(3, "$name: failed to create symlink run -> $run");
+    }
+
+    if ($tcfg->{'sources'}) {
+        open(SRC, ">$path/sources");
+        foreach my $src (@{$tcfg->{'sources'}}) {
+            print SRC "$src\n";
+        } 
+        close(SRC);
+    }
+
+    if ($tcfg->{'options'}) {
+        mkdir("$path/env") || error(3, "$name: failed to create environment directory $path/env");
+        foreach my $opt (keys(%{$tcfg->{'options'}})) {
+            open(OPT, ">$path/env/".uc($opt));
+            print OPT "$tcfg->{'options'}->{$opt}\n";
+            close(OPT);
+        }
+    }
+}
+
+
+#
+# int asbool(str $val)
+#
+# $val The value to evaluate as boolean
+#
+sub asbool {
+    local $val = shift;
+    if ($val =~ /^([oO][nN]|[yY][eE][sS]|[tT][rR][uU][eE])$/) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
