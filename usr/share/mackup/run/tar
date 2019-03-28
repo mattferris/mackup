@@ -4,6 +4,31 @@
 #
 exec 2>&1
 
+if [ -z "$1" ]; then
+    cat <<EOF
+
+This script is part of mackup, a backup suite.
+
+Backup sources using tar.
+
+Environment variables:
+
+    REMOTE_HOST
+        Address or hostname where sources reside
+
+    TAR_OPTS
+        Custom list of options (overrides default of '-v', '-c' is always used)
+
+    TAR_BZIP2
+        If exists, bzip the archive (-j)
+
+    TAR_GZIP
+        If exists, gzip the archive (-z)
+
+EOF
+    exit 1
+fi
+
 source="$(dirname $1)/$(basename $1)"
 target=$(basename $1)
 opts="-v"

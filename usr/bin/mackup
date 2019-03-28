@@ -155,7 +155,7 @@ dodir() {
 
         # run the backup command
         (
-            if [ ! -d /data ]; then
+            if [ ! -d ./data ]; then
                 mkdir ./data
             fi
 

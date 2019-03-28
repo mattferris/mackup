@@ -4,6 +4,40 @@
 #
 exec 2>&1
 
+if [ -z "$1" ]; then
+    cat <<EOF
+
+This script is part of mackup, a backup suite.
+
+Backup sources using rsync.
+
+Environment variables:
+
+    INCREMENTAL_DAILY
+        If exists, link the current day to the previous day using --link-dest
+
+    INCREMENTAL_MONTHLY
+        If exists, link the current monthy to the previous month using --link-dest
+
+    REMOTE_HOST
+        Address or hostname where sources reside
+
+    ROTATE
+        The number of previous monthly backups to keep
+
+    RSYNC_OPTS
+        Custom list of options (overrides default of '-av')
+
+    RSYNC_DELETE
+        If exists, use the --delete option
+
+    RSYNC_EXCLUDE_FROM
+        Specifies a path to use with --exclude-from
+
+EOF
+    exit 1
+fi
+
 source="$(dirname $1)/$(basename $1)"
 target="./"
 dest=$target

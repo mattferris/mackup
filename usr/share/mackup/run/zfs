@@ -4,6 +4,28 @@
 #
 exec 2>&1
 
+if [ -z "$1" ]; then
+    cat <<EOF
+
+This script is part of mackup, a backup suite.
+
+Backup sources using ZFS snapshots.
+
+Environment variables:
+
+    ROTATE
+        The number of previous snapshots to keep
+
+    ZFS_OPTS
+        Custom list of options (passed to -o)
+
+    ZFS_SNAP_PREFIX
+        A prefix to apply to snapshot names
+
+EOF
+    exit 1
+fi
+
 source=$1
 
 if [ -z "$ROTATE" ]; then
@@ -20,7 +42,13 @@ snaplimit=-1
 snapdate=$(date +'%Y%m%d')
 snaphash=$(dd if=/dev/urandom count=1 bs=512 2>/dev/null | md5sum | cut -d\  -f1)
 
-snapname="${source}@mackup-${snapdate}-${snaphash}"
+snapprfx="mackup"
+
+if [ ! -z "$ZFS_SNAP_PREFIX" ]; then
+    snapprfx="mackup-${ZFS_SNAP_PREFIX}"
+fi
+
+snapname="${source}@${snapprfx}-${snapdate}-${snaphash}"
 
 if ! snapcount=$(zfs get -H -o value snapshot_count $source 2>&1); then
     echo "error: failed to get snapshot_count, possible non-existent dataset or volume: $source" >&2
@@ -49,7 +77,7 @@ if zfs get -H -o value type "$snapname" >/dev/null 2>&1; then
     echo "error: encountered name collision, aborting: $snapname"
 fi
 
-if ! (zfs snap "$ZFS_OPTS" "$snapname"); then
+if ! (zfs snap $ZFS_OPTS "$snapname"); then
     echo "error: failed to create snapshot" >&2
     exit 3
 fi
@@ -59,7 +87,7 @@ echo "created snapshot $snapname"
 if [ $ROTATE -gt 0 ]; then
     echo "cleaning up old snapshots; only keeping the last $ROTATE"
     i=0
-    for snap in $(zfs list -H -t snap -o name -s name | grep "^$source@mackup-" | sort -r); do
+    for snap in $(zfs list -H -t snap -o name -s name | grep "^${source}@${snapprfx}-" | sort -r); do
         if [ $i -ge $ROTATE ]; then
             if ! (zfs destroy -d "$snap"); then
                 echo "error: unable to destroy snapshot, aborting cleanup" >&2
