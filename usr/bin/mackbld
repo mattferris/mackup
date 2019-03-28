@@ -226,8 +226,8 @@ sub buildset {
         if ($set->{'options'}) {
             $tgtcfg->{'options'} = {} if !$tgtcfg->{'options'};
             foreach my $opt (keys(%{$set->{'options'}})) {
-                if (!$tgtcfg->{'options'}->{$o}) {
-                    $tgtcfg->{'options'}->{$opt} = $set->{'options'}->{$o};
+                if (!$tgtcfg->{'options'}->{$opt}) {
+                    $tgtcfg->{'options'}->{$opt} = $set->{'options'}->{$opt};
                 }
             }
         }
