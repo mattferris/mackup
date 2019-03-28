@@ -137,8 +137,8 @@ are laid out in a way that reflects this suggestion, assuming a Debian file
 system standard).
 
 Sets are stored in `/var/lib/mackup`, with logging stored in `/var/log/mackup`.
-Sets are enabled by linking them in `/etc/mackup/sets.d`. The cron script in
-`/etc/cron.daily/mackup` scans `/etc/mackup/sets.d` for enabled sets. If a set
+Sets are enabled by linking them in `/etc/mackup/sets.d`. The cron job in
+`/etc/cron.d/mackup` scans `/etc/mackup/sets.d` for enabled sets. If a set
 contains a `log` subdirectoy (preferably a symlink to `/var/log/mackup/<set>`,
 then output produced during the backup will be logged to a file, otherwise it
 is captured by cron and emailed to the user (in most cases).
@@ -234,3 +234,39 @@ example:
 
 The `servicectl-helper` script checks the name is was executed as - in this
 case `stop-mysql` and `start-mysql`.
+
+Config Management
+-----------------
+
+An experimental build system eases the setup of backup sets by allowing set
+configuration to be defined using a YAML file. The build utility, `mackbld`, can
+read this file and build the directory structure required by `mackup`.
+
+See `etc/mackup/conf.d/local.yml` for an overview of the file format.
+
+To build a backup set from a config file, you also need to include
+`etc/mackup/mackup.yml`.
+
+```
+# mackbld /etc/mackup/mackup.yml /etc/mackup/conf.d/local.yml
+info: reading file /etc/mackup/mackup.yml
+info: /etc/mackup/mackup.yml: found global configuration
+info: reading file /etc/mackup/conf.d/local.yml
+info: /etc/mackup/conf.d/local.yml: found set local
+info: proceeding to build set local
+info: local: wiping existing config cache
+info: local: creating config cache
+info: local: skipping target daily, not enabled
+info: local: set is enabled, so making it active
+info: successfully built set local
+```
+
+Multiple configuration files are merged together, with file specified as later
+arguments taking precedence over earlier ones. While the included files break
+global configuration and individual sets into their own files, it's possible to
+store all the configuration into a single file.
+
+To change a backup set's configuration, modify the config file and the run
+`mackbld` again. Care is taken to not disturb the data in the backup set, and
+only the control directory is modified.
+
