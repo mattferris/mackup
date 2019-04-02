@@ -55,7 +55,7 @@ doalert() {
             email="$MACKUP_MAILTO"
         fi
         subject="mackup: run script failed"
-        echo $1 | mail -s "$subject" $email
+        echo "$@" | mail -s "$subject" $email
     fi
 }
 
@@ -172,13 +172,13 @@ dodir() {
             retcode=$?
             if [ ! $retcode = 0 ]; then
                 echo "error: script failed, returned with code $retcode"
-                doalert $(printf '%s\n\n%s\n%s\n%s\n\n%s\n\n%s' \
+                doalert "$(printf '%s\n\n%s\n%s\n%s\n\n%s\n\n%s' \
                     "Run script failed, returned with code $retcode" \
                     "Host:   $(hostname -f)" \
                     "Target: $tpath" \
                     "Source: $source" \
                     "Script environment:" \
-                    "$(env)")
+                    "$(env)")"
             fi
         ) \
         | while read in; do echo "target $tname: source $source: run: $in"; done
