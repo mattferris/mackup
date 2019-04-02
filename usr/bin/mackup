@@ -55,7 +55,7 @@ doalert() {
             email="$MACKUP_MAILTO"
         fi
         subject="mackup: run script failed"
-        echo $1 | mail -s $subject $email
+        echo $1 | mail -s "$subject" $email
     fi
 }
 
