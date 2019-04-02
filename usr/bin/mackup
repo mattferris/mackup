@@ -119,26 +119,27 @@ dodir() {
             echo "target $tname: source $source: running prerun scripts in control/pre.d"
             for pre in $(find "./control/pre.d" -type f -perm /u+x,g+x); do
                 shortpre=$(basename $pre)
-                echo "target $tname: source $source: prerun: running $shortpre"
+                logprefix="target $name: source $source: prerun:"
+                echo "$logprefix running $shortpre"
 
                 ( env $runenv "$pre" "$source" 2>&1 1>/dev/null; exit $? )
 
                 retcode=$?
                 if [ $retcode = 255 ]; then
                     # skip source
-                    echo "target $tname: source $source: prerun: $shortpre: returned with code $retcode, skipping source"
+                    echo "$logprefix $shortpre: returned with code $retcode, skipping source"
                     skipsource=1
                 elif [ $retcode = 254 ]; then
                     # skip target
-                    echo "target $tname: source $source: prerun: $shortpre: returned with code $retcode, skipping target"
+                    echo "$logprefix: $shortpre: returned with code $retcode, skipping target"
                     skiptarget=1
                 elif [ ! $retcode = 0 ]; then
                     # log error, continue to backup source
-                    echo "target $tname: source $source: prerun: $shortpre: failed, returned with code $retcode, continuing with source"
+                    echo "$logprefix $shortpre: failed, returned with code $retcode, continuing with source"
                     doalert "$tpath/control/pre.d/$shortpre failed, returned with code $retcode"
                 fi 
 
-                echo "target $tname: source $source: prerun: finished $shortpre"
+                echo "$logprefix: finished $shortpre"
             done
             echo "target $tname: source $source: finished prerun scripts"
         fi
@@ -189,17 +190,18 @@ dodir() {
             echo "target $tname: source $source: running postrun scripts in control/post.d"
             for post in $(find "./control/post.d" -type f -perm /u+x,g+x); do
                 shortpost=$(basename $post)
-                echo "target $tname: source $source: postrun: running $shortpost"
+                logprefix="target $tname: source $source: postrun:"
+                echo "$logprefix running $shortpost"
 
                 ( env $runenv "$post" "$source" 2>&1 1>/dev/null; exit $? )
 
                 retcode=$?
                 if [ ! $retcode = 0 ]; then
-                    echo "target $tname: source $source: postrun: $shortpost: failed, returned with code $?"
+                    echo "$logprefix $shortpost: failed, returned with code $?"
                     doalert "$tpath/control/post.d/$shortpost failed, returned with code $retcode"
                 fi 
 
-                echo "target $tname: source $source: postrun: finished $shortpost"
+                echo "$logprefix finished $shortpost"
             done
             echo "target $tname: source $source: finished postrun scripts"
         fi
