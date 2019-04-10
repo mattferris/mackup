@@ -21,7 +21,7 @@ if [ ! -d "$dir" ]; then
     exit 1
 fi
 
-echo "working directory is $PWD"
+echo "working directory is $dir"
 
 #
 # %a abbreviated weekday name (Mon, Tue, ...)
@@ -172,14 +172,16 @@ dodir() {
             retcode=$?
             if [ ! $retcode = 0 ]; then
                 echo "error: script failed, returned with code $retcode"
-                doalert "$(printf '%s\n\n%s\n%s\n%s\n\n%s\n\n%s' \
+                doalert "$(printf '%s\n\n%s\n%s\n%s\n%s\n\n%s\n\n%s' \
                     "Run script failed, returned with code $retcode" \
-                    "Host:   $(hostname -f)" \
-                    "Target: $tpath" \
-                    "Source: $source" \
+                    "Command: env $runenv '../$runpath' '$source'" \
+                    "Host:    $(hostname -f)" \
+                    "Target:  $tpath" \
+                    "Source:  $source" \
                     "Script environment:" \
                     "$(env)")"
             fi
+
         ) \
         | while read in; do echo "target $tname: source $source: run: $in"; done
 
