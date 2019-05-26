@@ -1,0 +1,9 @@
+#!/bin/sh
+
+for i in \
+    var/log/mackup/.gitkeep \
+    var/lib/mackup/cache/.gitkeep \
+    var/lib/mackup/sets/.gitkeep \
+    ; do
+    [ -f $i ] && rm ./$i
+done

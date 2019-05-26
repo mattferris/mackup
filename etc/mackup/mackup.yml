@@ -1,0 +1,30 @@
+#
+# Global configuration for mackbld configuration build system
+#
+global:
+
+  #
+  # The directory where configuration will be cached for backup sets
+  #
+  cachedir: /var/lib/mackup/cache
+
+  #
+  # The directory where backup data will be stored for backup sets
+  #
+  datadir: /var/lib/mackup/sets
+
+  #
+  # The mackup configuration directory
+  #
+  etcdir: /etc/mackup
+
+  #
+  # The directory where mackup helpers are located
+  #
+  libdir: /usr/share/mackup
+
+  #
+  # The directory where logs will be written to for each set
+  #
+  logdir: /var/log/mackup
+

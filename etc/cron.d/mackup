@@ -1,0 +1,3 @@
+# /etc/cron.d/mackup - crontab for mackup(8)
+
+0 2 * * * root /usr/share/mackup/cron/daily

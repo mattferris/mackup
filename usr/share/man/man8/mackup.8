@@ -13,12 +13,14 @@ or
 simply by managing plaintext files. Modifying the contents of these files adjusts the behavior of the backup, reducing redundancy in scripting the backups by hand while allowing other programs to easily edit and maintain the contents of the files. Abrastracting the schedule of the backups from the backup utilties themselves also allows the adminstrator to change the backup utility, and automatically have the same backup schedule continue.
 .P
 If the current day is Monday, and the 
-.IR dir /tagets/mon
+.IR dir /targets/mon
 directory exists, then all the sources listed in 
 .IR dir /targets/mon/control/sources
 will be backed up individually into 
-.IR dir /targets/mon/data.
-If
+.IR dir /targets/mon/data
+by the run script
+.IR dir /targets/control/run.
+.P
 For example, if 
 .IR dir /targets/mon/control/sources
 contained /etc, then on Monday the /etc folder would be tar'd and stored in 
@@ -36,23 +38,22 @@ and
 .IR dir /targets/3
 exist, both directories will be processed.
 .P
-Lastly, if the directory 
+Additionally,
 .IR dir /targets/daily
-exists, it will be processed every day.
+is processed every day,
+.IR dir /targets/monthly
+is processed on the first day of the monthy, and
+.IR dir /targets/annually
+is processed on the first day of the year.
 .P
-While 
+While the
 .I sources
 file lists the locations that need to be backed up, the
 .I run
-file specifies the command that actually performs the backup. This file is actually a script that is called by mackup and is passed the following arguments:
-.IR source " " target " " .
-.I source 
-is the directory to backup,
-.I target
-is the location to backup \fIsource\fR to. 
+file specifies the command that actually performs the backup. This file is actually a script that is called by mackup and is passed the source to be backed up. The script is executed with the working directory set to the target being processed.
 .P
 .B mackup
-will produce output during it's run. The contents of this output is a mix of notice and error messages as well as the current file path being backed up. This output can be capture and sent to a log file with either the included logging utility
+will produce output during it's run. The contents of this output is a mix of notice and error messages as well as the current file path being backed up. This output can be captured and sent to a log file with either the included logging utility
 .BR macklog (8)
 or with a third-party utility such as
 .BR multilog (8)
@@ -71,3 +72,5 @@ The script that is executed to process the backup.
 Matt Ferris <matt@bueller.ca>
 .SH SEE ALSO
 .BR macklog (8)
+.br
+.I /usr/share/mackup/Readme.md

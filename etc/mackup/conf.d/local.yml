@@ -1,0 +1,211 @@
+#
+# Build configuration for the local backup set
+#
+sets:
+
+  #
+  # The name of the backup set (letters, numbers, underscores, hypens,
+  # no spaces).
+  #
+  local:
+
+    #
+    # Whether to enable to set. If enabled, it will be made active after the
+    # build.
+    #
+    enabled: true
+
+    #
+    # Whether logging should be turned on or not for this set. Logging is
+    # recommended to make troubleshooting easier.
+    #
+    logging: on
+
+    #
+    # The command to use to perform the backup. Must be an absolute path. Helper
+    # scripts can be specified by simply using the name of the script.
+    #
+    # Available helpers are: git, rsync, tar, and zfs
+    #
+    run: tar
+
+    #
+    # The sources to backup, one per line.
+    #
+    sources:
+      - /etc
+      - /home
+      - /root
+
+    #
+    # Options to modify how the backup runs. These are converted to environment
+    # variables and passed to the run command. While option names are defined
+    # using lowercase names here, they are converted to uppercase for use in the
+    # environment (i.e. remote_host is accessed via $REMOTE_HOST in the run
+    # command).
+    #
+    # Below is a list of options that are understood by the include helpers.
+    #
+    options:
+
+      #
+      # Link the current backup to the previous day.
+      #
+      # Default: false
+      # Used by: rsync
+      #
+      #incremental_daily: false
+
+      #
+      # Link the current backup to the previous month (rsync only).
+      #
+      # Default: false
+      # Used by: rsync
+      #
+      #incremental_monthly: false
+
+      #
+      # Sources should be backed up from the specified remote host, which can be
+      # defined as the IP address or hostname.
+      #
+      # Default: none
+      # Used by: git, rsync, tar
+      #
+      #remote_host: 10.10.10.10
+
+      #
+      # Rotate old backups when the number of backups for the target exceeds the
+      # defined limit.
+      #
+      # Default: none (no limit)
+      # Used by: rsync, zfs
+      #
+      #rotate: 10
+
+      #
+      # Override the options to the rsync command (default is '-av').
+      #
+      # Default: -av
+      # Used by: rsync
+      #
+      #rsync_opts: -av
+
+      #
+      # For incremental backups, delete files in the incremental backup that
+      # no longer exist in the source (--delete);
+      #
+      # Default: false
+      # Used by: rsync
+      #
+      #rsync_delete: false
+
+      #
+      # Exclude files from the backup according to the definitions in the
+      # specified file.
+      #
+      # Default: none
+      # Used by: rsync
+      #
+      #rsync_exclude_from: /path/to/file
+
+      #
+      # Override the options to the tar command (default is '-v', '-c' cannot be
+      # overriden).
+      #
+      # Default: -v
+      # Used by: tar
+      #
+      #tar_opts: -v
+
+      #
+      # Use bzip2 to compress the tarball (-j).
+      #
+      # Default: false
+      # Used by: tar
+      #
+      #tar_bzip2: false
+
+      #
+      # Use gzip to compress the tarball (-z).
+      #
+      # Default: false
+      # Used by: tar
+      #
+      #tar_gzip: false
+
+      #
+      # Pass options for creating the snapshot (e.g. exec=off)
+      #
+      # Default: none
+      # Used by: zfs
+      #
+      #zfs_opts: exec=off setuid=off devices=off
+
+      #
+      # Specify a prefix to use in snapshot names. Snapshot have the format:
+      # @mackup-<prefix if specified>-<date YYYYMMDD>-<32 byte hex ID>
+      #
+      # Default: none
+      # Used by: zfs
+      #
+      #zfs_snap_prefix: daily
+
+    #
+    # The scheduling targets.
+    #
+    targets:
+
+      #
+      # Backup daily.
+      #
+      daily:
+
+        #
+        # Enable the target.
+        #
+        enabled: true
+
+        #
+        # Optionally override the default run command for the set.
+        #
+        #run: rsync
+
+        #
+        # Optionally override the default sources for the set.
+        #
+        #sources:
+        #  - /etc/
+        #  - /home
+        #  - /root
+        #  - /var/log
+
+        #
+        # Define specific options for this target, overriding set options.
+        # See above for available options.
+        #
+        #options:
+
+      #
+      # Backup monthly (1st of the month).
+      #
+      #monthly:
+
+      #
+      # Backup annually (January 1st)
+      #
+      #annually:
+
+      #
+      # Backup on the 5th of the month.
+      #
+      #5:
+
+      #
+      # Backup on March 1st.
+      #
+      #mar:
+
+      #
+      # Backup on Tuesday.
+      #
+      #tue:

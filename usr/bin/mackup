@@ -21,22 +21,27 @@ if [ ! -d "$dir" ]; then
     exit 1
 fi
 
-echo "working directory is $PWD"
+echo "working directory is $dir"
 
 #
 # %a abbreviated weekday name (Mon, Tue, ...)
 # %b abbreviated month name (Jan, Feb, ...)
 # %d day of month
 #
-targets=$( echo daily $(date +'%a %b %d' | awk '{print tolower($0)}') )
+monthday=$(date +%d)
+weekday=$(date +%a | awk '{print tolower($0)}')
+month=$(date +%b | awk '{print tolower($0)}')
+yearday=$(date +%j)
 
-# inject 'monthly' target if first day of the month
-if [ $(date +'%d') = "1" ]; then
-    targets="$targets monthly"
+targets="daily $weekday $monthday $yearday ${month}${monthday}"
+
+# inject 'monthly' and month name targets if first day of the month
+if [ "$monthday" = "01" ]; then
+    targets="$targets monthly $month"
 fi
 
 # inject 'annually' target if first day of the year
-if [ $(date +'%j') = "001" ]; then
+if [ "$yearday" = "001" ]; then
     targets="$targets annually"
 fi
 
@@ -50,7 +55,7 @@ doalert() {
             email="$MACKUP_MAILTO"
         fi
         subject="mackup: run script failed"
-        echo $1 | mail -s $subject $email
+        echo "$@" | mail -s "$subject" $email
     fi
 }
 
@@ -89,7 +94,7 @@ dodir() {
     fi
 
     # does target/control/run exist?
-    runpath="./control/run"
+    runpath=$(realpath "./control/run")
     if [ ! -f "$runpath" ]; then
         echo "target $tname: error: no run script for $tpath, $runpath doesn't exist "
         exit 1
@@ -114,26 +119,27 @@ dodir() {
             echo "target $tname: source $source: running prerun scripts in control/pre.d"
             for pre in $(find "./control/pre.d" -type f -perm /u+x,g+x); do
                 shortpre=$(basename $pre)
-                echo "target $tname: source $source: prerun: running $shortpre"
+                logprefix="target $name: source $source: prerun:"
+                echo "$logprefix running $shortpre"
 
                 ( env $runenv "$pre" "$source" 2>&1 1>/dev/null; exit $? )
 
                 retcode=$?
                 if [ $retcode = 255 ]; then
                     # skip source
-                    echo "target $tname: source $source: prerun: $shortpre: returned with code $retcode, skipping source"
+                    echo "$logprefix $shortpre: returned with code $retcode, skipping source"
                     skipsource=1
                 elif [ $retcode = 254 ]; then
                     # skip target
-                    echo "target $tname: source $source: prerun: $shortpre: returned with code $retcode, skipping target"
+                    echo "$logprefix: $shortpre: returned with code $retcode, skipping target"
                     skiptarget=1
                 elif [ ! $retcode = 0 ]; then
                     # log error, continue to backup source
-                    echo "target $tname: source $source: prerun: $shortpre: failed, returned with code $retcode, continuing with source"
+                    echo "$logprefix $shortpre: failed, returned with code $retcode, continuing with source"
                     doalert "$tpath/control/pre.d/$shortpre failed, returned with code $retcode"
                 fi 
 
-                echo "target $tname: source $source: prerun: finished $shortpre"
+                echo "$logprefix: finished $shortpre"
             done
             echo "target $tname: source $source: finished prerun scripts"
         fi
@@ -155,19 +161,27 @@ dodir() {
 
         # run the backup command
         (
+            if [ ! -d ./data ]; then
+                mkdir ./data
+            fi
+
             cd ./data
-            env $runenv "../$runpath" "$source"
+
+            env $runenv "$runpath" "$source" 2>&1
+
             retcode=$?
             if [ ! $retcode = 0 ]; then
                 echo "error: script failed, returned with code $retcode"
-                doalert $(printf '%s\n\n%s\n%s\n%s\n\n%s\n\n%s' \
+                doalert "$(printf '%s\n\n%s\n%s\n%s\n%s\n\n%s\n\n%s' \
                     "Run script failed, returned with code $retcode" \
-                    "Host:   $(hostname -f)" \
-                    "Target: $tpath" \
-                    "Source: $source" \
+                    "Command: env $runenv '../$runpath' '$source'" \
+                    "Host:    $(hostname -f)" \
+                    "Target:  $tpath" \
+                    "Source:  $source" \
                     "Script environment:" \
-                    "$(env)")
+                    "$(env)")"
             fi
+
         ) \
         | while read in; do echo "target $tname: source $source: run: $in"; done
 
@@ -178,17 +192,18 @@ dodir() {
             echo "target $tname: source $source: running postrun scripts in control/post.d"
             for post in $(find "./control/post.d" -type f -perm /u+x,g+x); do
                 shortpost=$(basename $post)
-                echo "target $tname: source $source: postrun: running $shortpost"
+                logprefix="target $tname: source $source: postrun:"
+                echo "$logprefix running $shortpost"
 
                 ( env $runenv "$post" "$source" 2>&1 1>/dev/null; exit $? )
 
                 retcode=$?
                 if [ ! $retcode = 0 ]; then
-                    echo "target $tname: source $source: postrun: $shortpost: failed, returned with code $?"
+                    echo "$logprefix $shortpost: failed, returned with code $?"
                     doalert "$tpath/control/post.d/$shortpost failed, returned with code $retcode"
                 fi 
 
-                echo "target $tname: source $source: postrun: finished $shortpost"
+                echo "$logprefix finished $shortpost"
             done
             echo "target $tname: source $source: finished postrun scripts"
         fi

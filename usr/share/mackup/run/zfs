@@ -1,0 +1,101 @@
+#!/bin/sh
+#
+# zfs backup script for mackup, see mackup(8)
+#
+exec 2>&1
+
+if [ -z "$1" ]; then
+    cat <<EOF
+
+This script is part of mackup, a backup suite.
+
+Backup sources using ZFS snapshots.
+
+Environment variables:
+
+    ROTATE
+        The number of previous snapshots to keep
+
+    ZFS_OPTS
+        Custom list of options (passed to -o)
+
+    ZFS_SNAP_PREFIX
+        A prefix to apply to snapshot names
+
+EOF
+    exit 1
+fi
+
+source=$1
+
+if [ -z "$ROTATE" ]; then
+    ROTATE=0
+fi
+
+if [ -z "$ZFS_OPTS" ]; then
+    ZFS_OPTS=""
+fi
+
+snapcount=0
+snaplimit=-1
+
+snapdate=$(date +'%Y%m%d')
+snaphash=$(dd if=/dev/urandom count=1 bs=512 2>/dev/null | md5sum | cut -d\  -f1)
+
+snapprfx="mackup"
+
+if [ ! -z "$ZFS_SNAP_PREFIX" ]; then
+    snapprfx="mackup-${ZFS_SNAP_PREFIX}"
+fi
+
+snapname="${source}@${snapprfx}-${snapdate}-${snaphash}"
+
+if ! snapcount=$(zfs get -H -o value snapshot_count $source 2>&1); then
+    echo "error: failed to get snapshot_count, possible non-existent dataset or volume: $source" >&2
+    exit 1
+fi
+
+if [ "$snapcount" = "none" ]; then
+    snapcount=0
+fi
+
+if ! snaplimit=$(zfs get -H -o value snapshot_limit $source 2>&1); then
+    echo "error: failed to get snapshot_limit: $source" >&2
+    exit 1
+fi
+
+if [ "$snaplimit" = "none" ]; then
+    snaplimit=-1
+fi
+
+if [ ! $snaplimit = -1 -a $snapcount -gt $snaplimit ]; then
+    echo "error: reached snapshot_limit for this dataset or volume: $source" >&2
+    exit 2
+fi
+
+if zfs get -H -o value type "$snapname" >/dev/null 2>&1; then
+    echo "error: encountered name collision, aborting: $snapname"
+fi
+
+if ! (zfs snap $ZFS_OPTS "$snapname"); then
+    echo "error: failed to create snapshot" >&2
+    exit 3
+fi
+
+echo "created snapshot $snapname"
+
+if [ $ROTATE -gt 0 ]; then
+    echo "cleaning up old snapshots; only keeping the last $ROTATE"
+    i=0
+    for snap in $(zfs list -H -t snap -o name -s name | grep "^${source}@${snapprfx}-" | sort -r); do
+        if [ $i -ge $ROTATE ]; then
+            if ! (zfs destroy -d "$snap"); then
+                echo "error: unable to destroy snapshot, aborting cleanup" >&2
+                exit 4
+            fi
+            echo "destroyed $snap"
+        fi
+        i=$(expr $i + 1)
+    done
+fi
+

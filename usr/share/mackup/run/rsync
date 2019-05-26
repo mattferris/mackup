@@ -4,6 +4,40 @@
 #
 exec 2>&1
 
+if [ -z "$1" ]; then
+    cat <<EOF
+
+This script is part of mackup, a backup suite.
+
+Backup sources using rsync.
+
+Environment variables:
+
+    INCREMENTAL_DAILY
+        If exists, link the current day to the previous day using --link-dest
+
+    INCREMENTAL_MONTHLY
+        If exists, link the current monthy to the previous month using --link-dest
+
+    REMOTE_HOST
+        Address or hostname where sources reside
+
+    ROTATE
+        The number of previous monthly backups to keep
+
+    RSYNC_OPTS
+        Custom list of options (overrides default of '-av')
+
+    RSYNC_DELETE
+        If exists, use the --delete option
+
+    RSYNC_EXCLUDE_FROM
+        Specifies a path to use with --exclude-from
+
+EOF
+    exit 1
+fi
+
 source="$(dirname $1)/$(basename $1)"
 target="./"
 dest=$target
@@ -11,6 +45,11 @@ opts="-av"
 
 if [ ! -z "$REMOTE_HOST" ]; then
     source="$REMOTE_HOST:$source"
+fi
+
+if [ ! -z "$INCREMENTAL_NUM" -a -z "$ROTATE" ]; then
+    echo "notice: use of INCREMENTAL_NUM is deprecated, use ROTATE instead" >&2
+    ROTATE=$INCREMENTAL_NUM
 fi
 
 if [ ! -z "$RSYNC_OPTS" ]; then
@@ -30,7 +69,7 @@ if [ ! -z "$INCREMENTAL_MONTHLY" ]; then
     lastmonth=$(date -d '1 month ago' +'%b' | awk '{print tolower($1)}')
     echo "attempting monthly incremental backup: last=$lastmonth cur=$curmonth"
     lasttarget="$(realpath $target)/$lastmonth/$(basename $source)"
-    dest="$target/$curmonth/$(basename $source)"
+    dest="$target/$curmonth"
     if [ -d "$lasttarget" ]; then
         echo "found last month's backup: $lasttarget"
         opts="$opts --link-dest=$(dirname $lasttarget)/"
@@ -38,8 +77,8 @@ if [ ! -z "$INCREMENTAL_MONTHLY" ]; then
         echo "backup $lasttarget doesn't exist, starting fresh"
     fi
 
-    if [ ! -z "$RSYNC_INCREMENTAL_NUM" ]; then
-        delmonth=$(date -d "$RSYNC_INCREMENTAL_NUM" +'%b' | awk '{print tolower($1)}')
+    if [ ! -z "$ROTATE" ]; then
+        delmonth=$(date -d "$ROTATE months ago" +'%b' | awk '{print tolower($1)}')
         if [ -d "$target/$delmonth" ]; then
             echo "deleting old monthly backup $target/$delmonth"
             rm -r "$target/$delmonth"
