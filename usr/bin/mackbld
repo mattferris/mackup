@@ -161,15 +161,15 @@ sub buildset {
 
     # make fresh cache directory
     info("$name: creating config cache");
-    mkdir($cachedir) || error(3, "$name: failed to create config cache $cachedir");
+    make_path("$cachedir/targets", { error => \my $err });
+    if (@$err) {
+        error(3, "$name: failed to create config cache $cachedir/targets");
+    }
 
     # make data directory if it doesn't exist
     if (! -d $datadir) {
         info("$name: creating data directory");
-        make_path("$datadir/targets", { error => \my $err});
-        if (@$err) {
-            error(3, "$name: failed to create data directory $datadir/targets");
-        }
+        mkdir("$datadir") || error(3, "$name: failed to create data directory $datadir");
     }
 
     # prepare logging, if enabled
@@ -182,18 +182,13 @@ sub buildset {
         }
 
         # symlink log directory into set
-        if (-l "$datadir/log") {
-            unlink("$datadir/log") || error(3, "$name: failed to remove symlink $datadir/log");
-        } elsif (-e "$datadir/log") {
-            if (-d "$datadir/log") {
-                info("$name: found existing log directory, archiving as $datadir/oldlog");
-            } else {
-                info("$name: found $datadir/log but is an invalid file type, archiving as $datadir/oldlog");
-            }
-            rename("$datadir/log", "$datadir/oldlog") || error(3, "$name: failed to rename $datadir/log to $datadir/oldlog");
+        if (-l "$cachedir/log") {
+            unlink("$cachedir/log") || error(3, "$name: failed to remove symlink $cachedir/log");
+        } elsif (-e "$cachedir/log") {
+            error(3, "$name: found $cachedir/log but is not a symlink, refusing to remove");
         }
 
-        symlink($logdir, "$datadir/log") || error(3, "$name: failed to create symlink $datadir/log -> $logdir");
+        symlink($logdir, "$cachedir/log") || error(3, "$name: failed to create symlink $cachedir/log -> $logdir");
 
     }
 
@@ -207,7 +202,7 @@ sub buildset {
 
         info("$name: preparing target $t");
 
-        my $tgtdir = "$cachedir/$t";
+        my $tgtdir = "$cachedir/targets/$t";
         mkdir($tgtdir) || error(3, "$name: failed to create target directory $tgtdir");
 
         my $tgtcfg = $set->{'targets'}->{$t};
@@ -232,14 +227,15 @@ sub buildset {
             }
         }
 
-        buildtarget($tgtdir, $tgtcfg);
+        buildtarget("$tgtdir/control", $tgtcfg);
 
         # make target data directory and link to control directory
-        my $tdatadir = "$datadir/targets/$t";
+        my $tdatadir = "$datadir/$t";
         if (! -d $tdatadir) {
             mkdir($tdatadir) || error(3, "$name: failed to create target data directory $tdatadir");
-            symlink($tgtdir, "$tdatadir/control") || error(3, "$name: failed to link config in target data directory control -> $tgtdir");
         }
+
+        symlink($tdatadir, "$tgtdir/data") || error(3, "$name: failed to link data directory in target directory data -> $tdatadir");
     }
 
     # removing existing symlink in etc/mackup/sets.d
@@ -252,7 +248,7 @@ sub buildset {
     # make set active, if enabled
     if (asbool($set->{'enabled'})) {
         info("$name: set is enabled, so making it active");
-        symlink($datadir, "$etcdir/sets.d/$name") || error(3, "$name: failed to create symlink $etcdir/sets.d/$name -> $datadir");
+        symlink($cachedir, "$etcdir/sets.d/$name") || error(3, "$name: failed to create symlink $etcdir/sets.d/$name -> $cachedir");
     } else {
         info("$name: set is not enabled, so not making it active");
     }
@@ -270,6 +266,10 @@ sub buildset {
 sub buildtarget {
     local $path = shift;
     local $tcfg = shift;
+
+    if (!-d $path) {
+        mkdir($path) || error(3, "$name: failed to create target control directory $path");
+    }
 
     if ($tcfg->{'run'}) {
         local $run = $tcfg->{'run'};
