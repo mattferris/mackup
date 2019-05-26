@@ -94,7 +94,7 @@ dodir() {
     fi
 
     # does target/control/run exist?
-    runpath=$(relpath "./control/run")
+    runpath=$(realpath "./control/run")
     if [ ! -f "$runpath" ]; then
         echo "target $tname: error: no run script for $tpath, $runpath doesn't exist "
         exit 1
