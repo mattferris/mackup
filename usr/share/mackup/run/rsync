@@ -69,7 +69,7 @@ if [ ! -z "$INCREMENTAL_MONTHLY" ]; then
     lastmonth=$(date -d '1 month ago' +'%b' | awk '{print tolower($1)}')
     echo "attempting monthly incremental backup: last=$lastmonth cur=$curmonth"
     lasttarget="$(realpath $target)/$lastmonth/$(basename $source)"
-    dest="$target/$curmonth/$(basename $source)"
+    dest="$target/$curmonth"
     if [ -d "$lasttarget" ]; then
         echo "found last month's backup: $lasttarget"
         opts="$opts --link-dest=$(dirname $lasttarget)/"
