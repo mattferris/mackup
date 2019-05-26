@@ -61,7 +61,7 @@ That's it! All that's left to do is run mackup.
     # mackup /var/backups/mackup
 
 Once mackup is finished, you're backed up data can be found in
-`/var/backups/mon/data/etc.tar`. mackup automatically creates the `data`
+`/var/backups/mackup/mon/data/etc.tar`. mackup automatically creates the `data`
 directory if it doesn't exist.
 
 Configure mackup to run from cron and you have an automatic backup! 
@@ -254,7 +254,7 @@ read this file and build the directory structure required by `mackup`.
 See `etc/mackup/conf.d/local.yml` for an overview of the file format.
 
 To build a backup set from a config file, you also need to include
-`etc/mackup/mackup.yml`.
+`/etc/mackup/mackup.yml`.
 
 ```
 # mackbld /etc/mackup/mackup.yml /etc/mackup/conf.d/local.yml
@@ -270,10 +270,10 @@ info: local: set is enabled, so making it active
 info: successfully built set local
 ```
 
-Multiple configuration files are merged together, with file specified as later
+Multiple configuration files are merged together, with files specified as later
 arguments taking precedence over earlier ones. While the included files break
 global configuration and individual sets into their own files, it's possible to
-store all the configuration into a single file.
+store all the configuration in a single file.
 
 To change a backup set's configuration, modify the config file and the run
 `mackbld` again. Care is taken to not disturb the data in the backup set, and
