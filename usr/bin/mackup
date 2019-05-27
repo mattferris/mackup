@@ -117,7 +117,7 @@ dodir() {
         # handle prerun scripts
         if [ -d "./control/pre.d" ]; then
             echo "target $tname: source $source: running prerun scripts in control/pre.d"
-            for pre in $(find "./control/pre.d" -type f -perm /u+x,g+x); do
+            for pre in $(find "./control/pre.d" \( -type f -or -type l \) -perm /u+x,g+x); do
                 shortpre=$(basename $pre)
                 logprefix="target $name: source $source: prerun:"
                 echo "$logprefix running $shortpre"
@@ -190,7 +190,7 @@ dodir() {
         # handle postrun scripts
         if [ -d "./control/post.d" ]; then
             echo "target $tname: source $source: running postrun scripts in control/post.d"
-            for post in $(find "./control/post.d" -type f -perm /u+x,g+x); do
+            for post in $(find "./control/post.d" \( -type f -or -type l \) -perm /u+x,g+x); do
                 shortpost=$(basename $post)
                 logprefix="target $tname: source $source: postrun:"
                 echo "$logprefix running $shortpost"
