@@ -22,12 +22,36 @@ sets:
     logging: on
 
     #
+    # A list of scripts to run before each source is backed up. Helper scripts
+    # can be specified using their name, custom scripts can be specified by
+    # their full path. The source is passed as the first argument to the
+    # script.
+    #
+    # Available helpers: stop-mysql
+    #
+    #pre:
+    #  - stop-mysql
+    #  - /path/to/script
+
+    #
     # The command to use to perform the backup. Must be an absolute path. Helper
     # scripts can be specified by simply using the name of the script.
     #
     # Available helpers are: git, rsync, tar, and zfs
     #
     run: tar
+
+    #
+    # A list of scripts to run after each source is backed up. Helper scripts
+    # can be specified using their name, custom scripts can be specified by
+    # their full path. The source is passed as the first argument to the
+    # script.
+    #
+    # Available helpers: start-mysql
+    #
+    #post:
+    #  - start-mysql
+    #  - /path/to/script
 
     #
     # The sources to backup, one per line.
@@ -166,9 +190,23 @@ sets:
         enabled: true
 
         #
+        # Optionally override the default list of pre-run scripts
+        #
+        #pre:
+        #  - stop-mysql
+        #  - /path/to/script
+
+        #
         # Optionally override the default run command for the set.
         #
         #run: rsync
+
+        #
+        # Optionally override the default list of post-run scripts
+        #
+        #post:
+        #  - start-mysql
+        #  - /path/to/script
 
         #
         # Optionally override the default sources for the set.

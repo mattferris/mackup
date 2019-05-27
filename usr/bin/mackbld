@@ -54,6 +54,14 @@ for (my $i=@ARGV-1; $i>=0; $i--) {
                 error(2, "no targets defined for $s");
             }
 
+            if ($tmpset->{'pre'} && ref $tmpset->{'pre'} ne 'ARRAY') {
+                error(2, "pre-run scripts must be defined as an array");
+            }
+
+            if ($tmpset->{'post'} && ref $tmpset->{'post'} ne 'ARRAY') {
+                error(2, "post-run scripts must be defined as an array");
+            }
+
             #
             # check all targets in set define 'run' and 'sources'
             #
@@ -73,6 +81,14 @@ for (my $i=@ARGV-1; $i>=0; $i--) {
 
                 unless ($hassrc || ($tmptgt->{'sources'} && @{$tmptgt->{'sources'}})) {
                     error(2, "no sources defined for target $t in set $s");
+                }
+
+                if ($tmpset->{'pre'} && ref $tmpset->{'pre'} ne 'ARRAY') {
+                    error(2, "pre-run scripts must be defined as an array");
+                }
+
+                if ($tmpset->{'post'} && ref $tmpset->{'post'} ne 'ARRAY') {
+                    error(2, "post-run scripts must be defined as an array");
                 }
             }
 
@@ -98,6 +114,15 @@ foreach my $key (@{['cachedir', 'datadir', 'etcdir', 'logdir', 'libdir']}) {
     }
 }
 
+
+#
+# build sets directory, if it doesn't exist
+#
+
+my $setsdir = $cfg->{'global'}->{'etcdir'}.'/sets.d';
+if (! -d $setsdir) {
+    mkdir($setsdir) || error(2, "failed to create sets dir $setsdir");
+}
 
 #
 # build the sets
@@ -207,9 +232,19 @@ sub buildset {
 
         my $tgtcfg = $set->{'targets'}->{$t};
 
+        # import 'pre' from set if not defined for target
+        if (!$tgtcfg->{'pre'}) {
+            $tgtcfg->{'pre'} = $set->{'pre'};
+        }
+
         # import 'run' from set if not defined for target
         if (!$tgtcfg->{'run'}) {
             $tgtcfg->{'run'} = $set->{'run'};
+        }
+
+        # import 'post' from set if not defined for target
+        if (!$tgtcfg->{'post'}) {
+            $tgtcfg->{'post'} = $set->{'post'};
         }
 
         # import 'sources' from set if not defined for target
@@ -271,12 +306,40 @@ sub buildtarget {
         mkdir($path) || error(3, "$name: failed to create target control directory $path");
     }
 
+    if ($tcfg->{'pre'}) {
+        mkdir("$path/pre.d") || error(3, "$name: failed to create pre-run directory $path/pre.d");
+        foreach my $pre (@{$tcfg->{'pre'}}) {
+            if ($pre !~ /^\//) {
+                $pre = $cfg->{'global'}->{'libdir'}.'/pre/'.$pre;
+            }
+            if (! -x $pre) {
+                error(3, "$name: pre-run script doesn't exist, or isn't executable $pre");
+            }
+            info("$name: linking pre-run script $pre");
+            symlink($pre, "$path/pre.d/".basename($pre)) || error(3, "$name: failed to create symlink for pre-run script $pre");
+        }
+    }
+
     if ($tcfg->{'run'}) {
         local $run = $tcfg->{'run'};
         if ($run !~ /^\//) {
             $run = $cfg->{'global'}->{'libdir'}.'/run/'.$run;
         }
         symlink($run, "$path/run") || error(3, "$name: failed to create symlink run -> $run");
+    }
+
+    if ($tcfg->{'post'}) {
+        mkdir("$path/post.d") || error(3, "$name: failed to create pre-run directory $path/post.d");
+        foreach my $post (@{$tcfg->{'post'}}) {
+            if ($post !~ /^\//) {
+                $post = $cfg->{'global'}->{'libdir'}.'/post/'.$post;
+            }
+            if (! -x $post) {
+                error(3, "$name: post-run script doesn't exist, or isn't executable $post");
+            }
+            info("$name: linking post-run script $post");
+            symlink($post, "$path/post.d/".basename($post)) || error(3, "$name: failed to create symlink for post-run script $post");
+        }
     }
 
     if ($tcfg->{'sources'}) {
@@ -312,3 +375,13 @@ sub asbool {
     }
 }
 
+#
+# str basename(str $path)
+#
+# $path The pathname to derive the basename from
+#
+sub basename {
+    local $path = shift;
+    local @parts = split(/\//, $path);
+    return @parts[$#parts];
+}
